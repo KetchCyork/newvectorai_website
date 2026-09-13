@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
-Sitemap: https://newvectorai.net/sitemap.xml
+Sitemap: https://www.newvectorai.net/sitemap.xml

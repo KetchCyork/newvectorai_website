@@ -15,7 +15,7 @@ export default {async fetch(request,env,ctx){const url=new URL(request.url),path
 try{
  if(!['GET','HEAD','POST'].includes(request.method))return json({error:'Method not allowed'},405);
  if(request.method==='POST'){if(request.headers.get('origin')!==url.origin)return json({error:'Request origin not allowed'},403);}
- if(url.hostname==='www.newvectorai.net'){url.hostname='newvectorai.net';return Response.redirect(url.toString(),308);}
+ if(url.hostname==='newvectorai.net'){url.hostname='www.newvectorai.net';return Response.redirect(url.toString(),308);}
  if(url.protocol==='http:'&&!['localhost','127.0.0.1'].includes(url.hostname)){url.protocol='https:';return Response.redirect(url.toString(),308);}
  if(path==='/api/auth/login'&&request.method==='POST'){
   let b;try{b=await body(request);}catch{return json({error:'Invalid sign-in request.'},400);}

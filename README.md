@@ -1,6 +1,6 @@
 # New Vector AI website
 
-Public website for [newvectorai.net](https://newvectorai.net), hosted directly in the owner's Cloudflare account. Static HTML/CSS/JavaScript, a Cloudflare Worker API, and D1 storage. No OpenAI hosting or ChatGPT authentication is required.
+Public website for [www.newvectorai.net](https://www.newvectorai.net), hosted on GitHub Pages. Cloudflare provides DNS/proxy services and the separate waitlist/admin backend. No OpenAI hosting or ChatGPT authentication is required.
 
 ## Pages
 
@@ -23,9 +23,13 @@ npm test
 npm run deploy:check
 ```
 
-## Cloudflare deployment
+## GitHub Pages deployment
 
-`wrangler.jsonc` binds the existing `newvectorai-website` D1 database and both `newvectorai.net` and `www.newvectorai.net`. The Worker redirects www to the apex and HTTP to HTTPS. All asset requests pass through the Worker so direct admin HTML paths receive the same authentication checks.
+The `Publish website to GitHub Pages` workflow publishes `public/` on pushes to `main`. The repository Pages source is GitHub Actions, with custom domain `www.newvectorai.net`. Cloudflare CNAME records point to `ketchcyork.github.io`. Only `/api/*` and `/admin*` are routed to the Worker. Public pages and assets are served by GitHub Pages.
+
+## Backend deployment
+
+`wrangler.jsonc` binds the existing `newvectorai-website` D1 database and both `newvectorai.net` and `www.newvectorai.net`. The Worker redirects apex backend requests to www and HTTP to HTTPS. Admin requests pass through the Worker so direct admin HTML paths receive the same authentication checks.
 
 ```sh
 npx wrangler login
@@ -34,7 +38,7 @@ npm run build
 npx wrangler deploy --secrets-file .local/cloudflare-secrets.json
 ```
 
-For later code-only deployments, `npm run deploy` preserves existing Worker secrets. This repository does not require GitHub Pages. Deployment is currently through Wrangler; pushing to GitHub alone does not deploy the website.
+For later code-only deployments, `npm run deploy` preserves existing Worker secrets. Public website changes deploy automatically from main through GitHub Actions. Wrangler deploys backend changes only.
 
 Production resources are managed in the site owner's Cloudflare account. Do not recreate or change the database ID when deploying updates. Use additive SQL migrations generated from `db/schema.ts` with `npm run db:generate`, then apply with `npm run db:migrate`.
 
@@ -58,7 +62,7 @@ To rotate the admin password, generate a new salt and PBKDF2 hash using `passwor
 
 ## Data and privacy
 
-Signups contain email, selected interest, signup time, and notification status. Rate-limit buckets contain hashed hourly identifiers and expire after an hour; expired rows are purged on subsequent submissions. Cloudflare handles hosting and database storage. Resend processes notifications only when configured. Google Fonts are loaded externally. No advertising or analytics scripts are included.
+Signups contain email, selected interest, signup time, and notification status. Rate-limit buckets contain hashed hourly identifiers and expire after an hour; expired rows are purged on subsequent submissions. GitHub Pages hosts the public website. Cloudflare handles the backend and database storage. Resend processes notifications only when configured. Google Fonts are loaded externally. No advertising or analytics scripts are included.
 
 The published privacy page covers this website and waitlist. Each pre-launch product will need its own policy for the behavior of the released product. To fulfill a verified deletion request, the owner can delete the matching signup through Cloudflare D1. Back up production data before schema changes.
 
