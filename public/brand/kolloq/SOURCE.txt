@@ -1,0 +1,4 @@
+Original unmodified SVG artwork from KetchCyork/Kolloq
+Commit: 6c803955fd2dbc28b12958a3a5ebbc66ea7a2f40
+brand/src/logo-dark.svg → logo.svg
+brand/src/mark.svg → mark.svg
