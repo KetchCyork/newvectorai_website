@@ -20,7 +20,7 @@
   }],
   "routes": [
     {"pattern": "newvectorai.net", "custom_domain": true},
-    {"pattern": "www.newvectorai.net", "custom_domain": true}
+    {"pattern": "www.newvectorai.net/*", "zone_name": "newvectorai.net"}
   ],
   "workers_dev": false,
   "preview_urls": false,
