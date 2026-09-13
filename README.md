@@ -18,6 +18,7 @@ Open http://localhost:4173. The local server binds only to loopback, uses a sepa
 
 - `/`: brand homepage, products, education, and launch waitlist
 - `/kolloq/`: dedicated Kolloq product page
+- `/emerra/`: planned research, preparation, and recovery experience based on the owner-provided functional specification
 - `/readme`: visitor guide
 - `/privacy`: website privacy policy
 - `/admin`: owner-only settings, saved signups, and CSV export
