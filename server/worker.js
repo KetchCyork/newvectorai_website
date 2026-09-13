@@ -11,10 +11,10 @@ async function decrypt(value,env){const b=Uint8Array.from(atob(value),c=>c.charC
 async function notify(env,signup){try{const s=await getSettings(env);if(!s.recipient||!s.sender||!s.api_key)return 'not_configured';const result=await fetch('https://api.resend.com/emails',{method:'POST',signal:AbortSignal.timeout(10000),headers:{'Authorization':`Bearer ${await decrypt(s.api_key,env)}`,'Content-Type':'application/json','Idempotency-Key':`nva-signup-${signup.id}`},body:JSON.stringify({from:s.sender,to:[s.recipient],subject:`New Vector AI waitlist: ${signup.interest}`,text:`New waitlist signup\n\nEmail: ${signup.email}\nInterest: ${signup.interest}\nDate: ${signup.created_at}`})});return result.ok?'sent':'failed';}catch{return 'failed';}}
 async function asset(path,request,env){const assetUrl=new URL(request.url);assetUrl.pathname=path;const response=await env.ASSETS.fetch(new Request(assetUrl,{method:request.method}));const h=new Headers(response.headers);for(const [k,v] of Object.entries(headers))h.set(k,v);h.set('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");return new Response(response.body,{status:response.status,headers:h});}
 async function body(request){if(!request.headers.get('content-type')?.includes('application/json'))throw Error('Invalid request');const reader=request.body?.getReader();if(!reader)throw Error('Invalid request');let size=0;const chunks=[];while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>4096){await reader.cancel();throw Error('Request too large');}chunks.push(value);}const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}return JSON.parse(new TextDecoder().decode(bytes));}
-export default {async fetch(request,env,ctx){const url=new URL(request.url),path=url.pathname;const admin=path==='/admin'||path.startsWith('/admin/')||path.startsWith('/api/admin/');
+const worker = {async fetch(request,env,ctx){const url=new URL(request.url),path=url.pathname;const admin=path==='/admin'||path.startsWith('/admin/')||path.startsWith('/api/admin/');
 try{
  if(!['GET','HEAD','POST'].includes(request.method))return json({error:'Method not allowed'},405);
- if(request.method==='POST'){if(request.headers.get('origin')!==url.origin)return json({error:'Request origin not allowed'},403);}
+ if(request.method==='POST'){if(request.headers.get('origin')!==url.origin&&!(path==='/api/waitlist'&&publicOrigins.has(request.headers.get('origin'))))return json({error:'Request origin not allowed'},403);}
  if(url.hostname==='newvectorai.net'){url.hostname='www.newvectorai.net';return Response.redirect(url.toString(),308);}
  if(url.protocol==='http:'&&!['localhost','127.0.0.1'].includes(url.hostname)){url.protocol='https:';return Response.redirect(url.toString(),308);}
  if(path==='/api/auth/login'&&request.method==='POST'){
@@ -46,3 +46,17 @@ try{
  const route=path==='/'?'/index.html':path==='/about'||path==='/about/'?'/about/index.html':path==='/admin/login'||path==='/admin/login/'?'/admin/login/index.html':path==='/kolloq'||path==='/kolloq/'?'/kolloq/index.html':path==='/admin'||path==='/admin/'?'/admin/index.html':path==='/securewhisper'||path==='/securewhisper/'?'/securewhisper/index.html':path==='/emerra'||path==='/emerra/'?'/emerra/index.html':path==='/privacy'||path==='/privacy/'?'/privacy/index.html':path==='/readme'||path==='/readme/'?'/readme/index.html':path;
  const response=await asset(route,request,env);if(request.method==='HEAD')return new Response(null,{status:response.status,headers:response.headers});return response;
 }catch{console.error(JSON.stringify({event:'request_failed',path}));return json({error:'Temporarily unavailable. Please try again shortly.'},503);}}};
+
+const publicOrigins=new Set(['https://www.newvectorai.net','https://newvectorai.net']);
+export default {async fetch(request,env,ctx){
+ const url=new URL(request.url),origin=request.headers.get('origin');
+ if(url.hostname==='manage.newvectorai.net'&&url.pathname==='/')return Response.redirect('https://www.newvectorai.net/',302);
+ if(url.pathname==='/api/waitlist'){
+  const permitted=publicOrigins.has(origin);
+  const cors=permitted?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'Content-Type','Vary':'Origin'}:{};
+  if(request.method==='OPTIONS')return new Response(null,{status:permitted?204:403,headers:{...headers,...cors}});
+  const response=await worker.fetch(request,env,ctx);const h=new Headers(response.headers);for(const [k,v] of Object.entries(cors))h.set(k,v);
+  return new Response(response.body,{status:response.status,headers:h});
+ }
+ return worker.fetch(request,env,ctx);
+}};

@@ -24,20 +24,8 @@
   ],
   "routes": [
     {
-      "pattern": "newvectorai.net/api/*",
-      "zone_name": "newvectorai.net"
-    },
-    {
-      "pattern": "newvectorai.net/admin*",
-      "zone_name": "newvectorai.net"
-    },
-    {
-      "pattern": "www.newvectorai.net/api/*",
-      "zone_name": "newvectorai.net"
-    },
-    {
-      "pattern": "www.newvectorai.net/admin*",
-      "zone_name": "newvectorai.net"
+      "pattern": "manage.newvectorai.net",
+      "custom_domain": true
     }
   ],
   "workers_dev": false,

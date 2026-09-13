@@ -15,8 +15,8 @@ for(const f of (await readdir('drizzle')).filter(f=>f.endsWith('.sql')).sort()){
 const secrets=JSON.parse(await readFile('.local/cloudflare-secrets.json','utf8'));
 const root=resolve('public');
 const ASSETS={async fetch(request){
- const file=resolve(root,'.'+new URL(request.url).pathname);
- if(!file.startsWith(root+sep))return new Response('Not found',{status:404});
+ const pathname=new URL(request.url).pathname;const assetRoot=pathname.startsWith('/admin/')?resolve('backend'):root;const file=resolve(assetRoot,'.'+pathname);
+ if(!file.startsWith(assetRoot+sep))return new Response('Not found',{status:404});
  try {const bytes=await readFile(file);const types={html:'text/html; charset=utf-8',js:'text/javascript; charset=utf-8',css:'text/css; charset=utf-8',png:'image/png',svg:'image/svg+xml',xml:'application/xml',txt:'text/plain'};return new Response(bytes,{headers:{'Content-Type':types[file.split('.').pop()]||'application/octet-stream'}});}catch{return new Response('Not found',{status:404});}
 }};
 const env={DB,ASSETS,...secrets};

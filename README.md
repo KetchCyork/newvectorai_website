@@ -25,11 +25,13 @@ npm run deploy:check
 
 ## GitHub Pages deployment
 
-The `Publish website to GitHub Pages` workflow publishes `public/` on pushes to `main`. The repository Pages source is GitHub Actions, with custom domain `www.newvectorai.net`. Cloudflare CNAME records for the root and www point to `ketchcyork.github.io`. Keep proxying enabled so the same-domain backend routes work; the origin for public content remains GitHub Pages. Only `/api/*` and `/admin*` are routed to the Worker. Public pages and assets are served by GitHub Pages.
+The `Publish website to GitHub Pages` workflow publishes `public/` on pushes to `main`. The custom domain is `www.newvectorai.net`; Cloudflare DNS points it to `ketchcyork.github.io`. The public site does not require Cloudflare proxying. Admin HTML is excluded from the Pages artifact; `/admin/` only redirects to the dedicated admin host.
+
+The protected administration service is https://manage.newvectorai.net/admin/. Waitlist submissions use that host's API with CORS restricted to the two public website origins. Admin APIs do not permit cross-origin writes. Public marketing pages are served only by GitHub Pages.
 
 ## Backend deployment
 
-`wrangler.jsonc` binds the existing `newvectorai-website` D1 database and both `newvectorai.net` and `www.newvectorai.net`. The Worker redirects apex backend requests to www and HTTP to HTTPS. Admin requests pass through the Worker so direct admin HTML paths receive the same authentication checks.
+`wrangler.jsonc` binds the existing `newvectorai-website` D1 database and the `manage.newvectorai.net` custom domain. Every admin asset request passes through server-side authentication. The backend build contains only admin files and shared styles/favicon, not public marketing pages.
 
 ```sh
 npx wrangler login
@@ -44,7 +46,7 @@ Production resources are managed in the site owner's Cloudflare account. Do not 
 
 ## Owner access and email
 
-Open `/admin/` and sign in with the generated admin password. The one-hour session uses an HttpOnly, Secure, SameSite=Strict cookie. Password verification uses salted PBKDF2; sessions are signed; login attempts and waitlist submissions have separate rate limits. Cross-origin writes are rejected.
+Open `https://manage.newvectorai.net/admin/` and sign in with the generated admin password. The one-hour session uses an HttpOnly, Secure, SameSite=Strict cookie. Password verification uses salted PBKDF2; sessions are signed; login attempts and waitlist submissions have separate rate limits. Cross-origin writes are rejected.
 
 The admin panel supports:
 
