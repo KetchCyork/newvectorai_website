@@ -25,7 +25,7 @@ npm run deploy:check
 
 ## GitHub Pages deployment
 
-The `Publish website to GitHub Pages` workflow publishes `public/` on pushes to `main`. The repository Pages source is GitHub Actions, with custom domain `www.newvectorai.net`. Cloudflare CNAME records point to `ketchcyork.github.io`. Only `/api/*` and `/admin*` are routed to the Worker. Public pages and assets are served by GitHub Pages.
+The `Publish website to GitHub Pages` workflow publishes `public/` on pushes to `main`. The repository Pages source is GitHub Actions, with custom domain `www.newvectorai.net`. Cloudflare CNAME records for the root and www point to `ketchcyork.github.io`. Keep proxying enabled so the same-domain backend routes work; the origin for public content remains GitHub Pages. Only `/api/*` and `/admin*` are routed to the Worker. Public pages and assets are served by GitHub Pages.
 
 ## Backend deployment
 
