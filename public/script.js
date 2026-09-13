@@ -1,6 +1,7 @@
 document.querySelectorAll('[data-interest]').forEach(link=>link.addEventListener('click',()=>{const select=document.querySelector('#interest');if(select)select.value=link.dataset.interest;}));
 if(location.pathname.startsWith('/kolloq'))document.querySelector('#interest').value='Kolloq';
 if(location.pathname.startsWith('/emerra'))document.querySelector('#interest').value='Emerra';
+if(location.pathname.startsWith('/securewhisper'))document.querySelector('#interest').value='SecureWhisper';
 async function submitWaitlist(email,interest,consent,website=''){
  const status=document.querySelector('#form-status');const button=document.querySelector('#waitlist-form button');
  button.disabled=true;status.textContent='Saving your place…';
