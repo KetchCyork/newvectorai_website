@@ -1,58 +1,67 @@
-# New Vector AI
+# New Vector AI website
 
-A dark, responsive brand website with a Kolloq product page, education section, product previews, privacy policy, Readme page, social links, and an owner-only waitlist admin panel.
+Public website for [newvectorai.net](https://newvectorai.net), hosted directly in the owner's Cloudflare account. Static HTML/CSS/JavaScript, a Cloudflare Worker API, and D1 storage. No OpenAI hosting or ChatGPT authentication is required.
+
+## Pages
+
+Home, About us, Kolloq, Emerra, SecureWhisper, Readme, Privacy, launch waitlist, and a protected owner admin panel. All products remain pre-launch. The founder story is based on Chris York's LinkedIn profile supplied for this project.
 
 ## Local development
 
-Requires Node.js 24 or newer (uses built-in SQLite for local development).
+Requires Node.js 22.13+ (local SQLite adapter; tested on Node 26) and npm.
 
 ```sh
 npm ci
-npm run build
+npm run admin:setup
 npm run dev
 ```
 
-Open http://localhost:4173. The local server binds only to loopback, uses a separate SQLite database in ignored `.local/`, and identifies the local preview user as the administrator. This development identity override is **not** included in the deployed Worker. Rebuild and restart the preview after edits.
-
-## Routes
-
-- `/`: brand homepage, products, education, and launch waitlist
-- `/kolloq/`: dedicated Kolloq product page
-- `/emerra/`: planned research, preparation, and recovery experience based on the owner-provided functional specification
-- `/securewhisper/`: corporate dictation, privacy boundaries, and IT controls
-- `/readme`: visitor guide
-- `/privacy`: website privacy policy
-- `/admin`: owner-only settings, saved signups, and CSV export
-
-## Production
-
-The server targets Cloudflare Workers through OpenAI Sites, with a logical D1 `DB` binding. `npm run build` bundles public assets into `dist/server/index.js`, with hosting metadata and generated Drizzle migrations. The source of truth is `public/`, `server/`, and `db/schema.ts`.
-
-Configure runtime secrets through the hosting platform:
-
-- `ADMIN_EMAIL`: owner email checked against the platform-authenticated identity on every admin request
-- `SETTINGS_KEY`: a stable base64-encoded 32-byte AES-GCM key for encrypted email-service credentials
-
-Never change the encryption key without migrating stored credentials. Never host this Worker behind a proxy that permits visitors to forge `oai-authenticated-user-*` headers. Sites supplies and controls these identity headers.
-
-The initial publication is owner-private. Changing the site's audience is a separate owner action. The admin route remains restricted by server-side email authorization.
-
-## Email setup
-
-Signups are saved without an email provider. In `/admin`, set the destination email address. To enable notifications, expand **Connect email delivery**, enter a sender address from a Resend-verified domain, and save a send-only Resend API key. API keys are encrypted before storage and are never returned to the browser.
-
-Only future signups trigger notifications. Delivery failure does not discard a signup. The admin table reports notification status; `Accepted` means the email provider accepted the message, not that it reached the inbox. Existing records can be exported, up to 10,000 at a time. Outbound delivery requires the owner's provider configuration and has not been tested with a real account.
-
-## Validation
+Open http://localhost:4173. The local server uses a separate SQLite database and the same password/session checks as production. Localhost browsers permit the secure admin cookie. Owner credentials are written to `.local/admin-access.txt`; deployment secrets are in `.local/cloudflare-secrets.json`. Both are ignored by Git with restrictive file permissions. Store the password in your password manager.
 
 ```sh
 npm test
+npm run deploy:check
 ```
 
-Tests cover persistent signups, duplicate handling, consent validation, origin checks, owner-only access, encryption, CSV formula neutralization, and rate limiting. Local SQLite tests exercise the Worker logic; deployment also applies the generated schema to D1.
+## Cloudflare deployment
 
-## Content sources and status
+`wrangler.jsonc` binds the existing `newvectorai-website` D1 database and both `newvectorai.net` and `www.newvectorai.net`. The Worker redirects www to the apex and HTTP to HTTPS. All asset requests pass through the Worker so direct admin HTML paths receive the same authentication checks.
 
-Product descriptions were grounded in the owner-provided repository READMEs and the owner's confirmation that all three products are pre-launch. Company-specific SecureWhisper pilot details are intentionally excluded. Product features may change before launch.
+```sh
+npx wrangler login
+npm run db:migrate
+npm run build
+npx wrangler deploy --secrets-file .local/cloudflare-secrets.json
+```
 
-The website privacy policy covers the website and waitlist only. Separate product policies are needed before product release. Waitlist removal requests are directed to the brand's LinkedIn page until a dedicated privacy address is supplied.
+For later code-only deployments, `npm run deploy` preserves existing Worker secrets. This repository does not require GitHub Pages. Deployment is currently through Wrangler; pushing to GitHub alone does not deploy the website.
+
+Production resources are managed in the site owner's Cloudflare account. Do not recreate or change the database ID when deploying updates. Use additive SQL migrations generated from `db/schema.ts` with `npm run db:generate`, then apply with `npm run db:migrate`.
+
+## Owner access and email
+
+Open `/admin/` and sign in with the generated admin password. The one-hour session uses an HttpOnly, Secure, SameSite=Strict cookie. Password verification uses salted PBKDF2; sessions are signed; login attempts and waitlist submissions have separate rate limits. Cross-origin writes are rejected.
+
+The admin panel supports:
+
+- Setting the notification recipient email.
+- Connecting a verified Resend sender and a send-only API key.
+- Viewing paginated signups and exporting up to 10,000 records to CSV.
+
+Waitlist entries save even before email is connected. Email settings apply to future signups. Connecting a recipient alone does not enable delivery: a verified sender and Resend API key are also required. API keys are encrypted with AES-GCM before storage and never returned to the browser. The form does not automatically subscribe users to an external mailing platform.
+
+## Secrets and recovery
+
+Never commit `.local/`, `.dev.vars`, or real credentials. Production secrets are `ADMIN_PASSWORD_HASH`, `ADMIN_PASSWORD_SALT`, `SESSION_SECRET`, and `SETTINGS_KEY`.
+
+To rotate the admin password, generate a new salt and PBKDF2 hash using `passwordHash` from `server/auth.js`, update the two password secrets, and rotate `SESSION_SECRET` to invalidate existing sessions. Keep `SETTINGS_KEY` unchanged after saving email settings, or stored API keys cannot be decrypted. Back up deployment secrets securely. The setup script deliberately refuses to overwrite an existing secrets file.
+
+## Data and privacy
+
+Signups contain email, selected interest, signup time, and notification status. Rate-limit buckets contain hashed hourly identifiers and expire after an hour; expired rows are purged on subsequent submissions. Cloudflare handles hosting and database storage. Resend processes notifications only when configured. Google Fonts are loaded externally. No advertising or analytics scripts are included.
+
+The published privacy page covers this website and waitlist. Each pre-launch product will need its own policy for the behavior of the released product. To fulfill a verified deletion request, the owner can delete the matching signup through Cloudflare D1. Back up production data before schema changes.
+
+## Source
+
+[GitHub repository](https://github.com/KetchCyork/newvectorai_website)
